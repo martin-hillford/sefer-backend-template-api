@@ -5,21 +5,21 @@ import { createHash } from 'crypto';
 const app = express();
 app.use(express.json());
 
-app.post('/render', (req, res) => {
+app.post('/render', async (req, res) => {
     try {
-        const parsed = render(req.body);
+        const parsed = await render(req.body);
         if (!parsed) res.status(400).send();
-        else res.json({ parsed  });
+        else res.send(parsed);
     } catch (exception) { res.status(500).send(); }
 
 });
 
-const render = (body) => {
+const render = async (body) => {
     // Check if the required values are provided
     const { accessToken, template, data, layout } = body;
     if (!accessToken || !template || !data) return null;
 
-    // Check if the api is matching. Basically get the first 32 accessToken, that is a random string
+    // Check if the api is matching. Get the first 32 accessToken, that is a random string
     // example:
     //      random: AL8ePBtk9z9PxqARdeAXC4TsnsV9xyry
     //      api_key: mh5nDHvSf8cUbDWgThbGFx2pn2GhyJh7,
@@ -30,8 +30,8 @@ const render = (body) => {
     if(hash !== accessToken.substring(32)) return null;
 
     // Now render the template using ejs.
-    let rendered = ejs.render(template, data);
-    if(layout) rendered = ejs.render(layout, { content: rendered});
+    let rendered = await ejs.render(template, { data });
+    if(layout) rendered = await ejs.render(layout, { content: rendered, data });
     return rendered;
 }
 
